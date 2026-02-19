@@ -1,0 +1,108 @@
+# **Acest document conține explicațiile pentru implementarea temei 1 din cadrul cursului Programarea Calculatoarelor și Limbaje de Programare I. Mai jos regăsiți descrierea conceptelor și a funcțiilor utilizate în cadrul celor trei probleme. În plus, implementările sunt modulare, fiecare problemă folosește funcții separate pentru operațiile principale.**
+314CA Stefan Alexandru Vladut
+## **Problema 1: Window join**
+
+Problema presupune procesarea unui flux de perechi(timestamp, valoare) și efectuarea unui join între toate perechile primite care se încadrează în intervalul de timp window față de cel mai recent element sosit.
+Colectarea și stocarea: toate perechile valide(t,x) până la apariția combinației 0,0 sunt citite și stocate într-un struct pereche.
+Pentru a realiza join-ul se parcurg elementele cu ajutorul a două for-uri, iar fiecare element curent pereche[i] este comparat cu toate elementele anterioare pereche[j](unde j<i). O pereche este validă dacă *pereche[i].t-pereche[j].t<=window*
+Pentru fiecare pereche validă se calculează CMMDC și CMMMC și se stochează rezultatul, împreună cu timpii(min_t, max_t) într-un alt struct rezultat. În cele din urmă, este sortat și afișat.
+
+**Funcții implementate**
+
+`cmmdc`(cel mai mare divizor comun)
+-	Parametri: unsigned long long a, unsigned long long b
+-	Returnează tot tipul de date unsigned long long ( cmmdc-ul dintre a și b)
+-	Mod de funcționare: implementează algoritmul lui Euclid iterativ.
+
+`cmmmc`(cel mai mic multiplu comun)
+-	Parametri: unsigned long long a, unsigned long long b
+-	Returnează tot tipul de date unsigned long long( cmmmc-ul dintre a și b)
+-	Mod de funcționare: calculează CMMMC folosind relația: 
+-		cmmmc(a,b) = a/cmmdc(a,b) * b
+-	Observație! Am rearanjat relația astfel încât să se efectueze împărțirea înaintea înmulțirii cu scopul de a preveni depășirea de memorie(overflow).
+
+`sortare`
+-	Parametri: rezultat rez[](vectorul de rezultate), int k(numărul de rezultate)
+-	Funcția nu așteaptă să se returneze ceva, fiind de tip void
+-	Mod de funcționare: Sortează vectorul de rezultate, folosind algoritmul Bubble Sort. Criteriul primar este după min_t(crescător), secundar după max_t(crescător). 
+
+## **Problema 2: Akari**
+Problema Akari necesită implementarea a două opțiuni: Completarea grid-ului(Opțiunea 1) și Validarea grid-ului(Opțiunea 2). Grid-ul este indexat de la 0 și este reprezentat ca o matrice de caractere.
+
+**Opțiunea 1: Completarea Grid-ului**
+-	Se parcurge grid-ul o singură dată.
+-	Pentru fiecare bec(L), se apelează funcția acoperire_bec pentru a propaga lumina.
+-	Pentru fiecare celulă numerotată (0-4), se apelează funcția acoperire_cel_neagra. Aceasta marchează celulele adiacente libere(‘-’) cu ‘x’ doar dacă numărul de becuri adiacente este exact cel cerut de celulă.
+
+**Opțiunea 2: Validarea Grid-ului**
+-	Pre-validare: Am folosit o buclă do-while pentru a aplica funcțiile acoperire_bec și acoperire_cel_neagra iterativ, până când nu se mai fac modificări. Acest lucru asigură că toate celulele blocate sau iluminate sunt marcate cu ‘x’.
+-	Verificare finală: Se parcurge grid-ul pentru a verifica cele două reguli Akari:
+-	Becuri adiacente: Se apelează funcția verif_bec pentru fiecare L(nu trebuie să se lumineze reciproc).
+-	Celule numerotate: Se apelează funcția verif_cel_negre pentru fiecare 0-4(numărul de becuri adiacente nu trebuie să depășească numărul cerut, iar numărul de becuri + celule libere adiacente trebuie să fie mai mare sau egal cu numărul cerut).
+
+**Funcții implementate**
+
+`acoperire_bec`
+-	Parametri: int i, int j(coordonatele becului), char a[][NMAX] (gridul), int n, int m(dimensiuni)
+-	Returneaza int(1 dacă s-au făcut modificările, 0 altfel)
+-	Mod de funcționare: Propagă lumina(‘x’) orizontal și vertical de la (i,j), oprindu-se la blocurile negre sau margini
+
+`acoperire_cel_neagra`
+-	Parametri: int i, int j(coordonatele celulei), char a[][NMAX] (gridul), int n, int m(dimensiuni)
+-	Returnează int(1 dacă s-au făcut modificările, 0 altfel)
+-	Mod de funcționare: Marchează cu ‘x’ celulele albe adiacente dacă numărul de becuri adiacente este egal cu valoarea celulei numerotate.
+
+`verif_bec`
+-	Parametri: int i, int j(coordonatele becului), char a[][NMAX], int n, int m
+-	Returnează int (0 dacă becul încalcă regula, 1 altfel)
+-	Mod de funcționare: verifică dacă becul de la (i,j) luminează un alt bec fără un bloc negru intermediar
+
+`verif_cel_negre`
+-	Parametri: int i, int j(coordonatele celulei), char a[][NMAX], int n, int m
+-	Returnează int (0 dacă celula încalcă regula, 1 altfel)
+-	Mod de funcționare: verifică dacă numărul de becuri adiacente este compatibil cu numărul de pe celulă, ținând cont de celulele libere(‘-’).
+
+
+## **Problema 3: Helicopters**
+
+Problema presupune validarea poziției a k elicoptere și clasificarea lor în trei categorii: invalide, nu afectează niciun pătrățel(X), și aterizarea greșită(Y). Pătrățelele afectate de umbră sunt marcate cu 0, iar cele neafectate cu 1. Grid-ul este indexat de la 1 la n și 1 la m.
+
+**Validarea poziției triunghiului**
+-	Un elicopter este poziționat necorespunzător(invalid) dacă:
+-		Ipotenuza este orizontală(r1==r2) sau verticală(c1==c2)
+-	Dacă poziția este invalidă, se afișează mesajul de eroare, iar elicopterul nu mai este luat în considerare.
+
+-	Normalizarea și calcul ariei
+-	Am folosit funcția swap pentru a mă asigura că întotdeauna r1<=r2 și se interschimbă corespunzător și coloanele c1 și c2.
+-	Se iterează apoi prin toate pătrățelele (t,j) acoperite de triunghiul dreptunghic isoscel. Iterarea depinde de semnul varfului s:
+-	Cazul s = 1(Vârful deasupra): 
+-	În funcție de ce coloană e mai mare derivă alte 2 cazuri: cazul când c1>c2 și cazul când c2>c1. Se iterează pe linii înapoi(de la r2 la r1).
+-	Cazul s = -1(Vârful dedesubt):
+-	La fel și aici există 2 cazuri: cazul când c1>c2 și cazul când c2>c1. De data aceasta se iterează pe linii înainte(de la r1 la r2).
+
+-	De asemenea, se folosește în toate cele 4 situații practic o variabilă cnt care crește de la 0 la |r2-r1| pentru a determina lungimea segmentului de coloana de iterat la linia curentă. Se numără cnt_afectate(valoarea 0) și cnt_neafectate(valoarea 1) din matricea a.
+
+
+**Clasificarea aterizării**
+-	Se clasifică doar elicopterele valide:
+-	Nu afectează niciun pătrățel(X): Dacă cnt_afectate = 0 și cnt_neafectate != 0
+-	Aterizare greșită(Y): Dacă cnt_afecatate * 2 > cnt_afectate + cnt_neafecate.
+-	`Observație!` Folosim formula implementată astfel ca să evităm operațiile pe numere reale.
+-	Rezultatele sunt afișate conform formatului cerut: mesaje de eroare, X, Y și indicii elicopterelor greșite în ordine crescătoare.
+
+**Funcții implementate:**
+
+`swap`
+-	Parametri: int *a, int *b(pointeri)
+-	Nu așteaptă să se returneze ceva, fiind tipul void
+-	Mod de funcționare: schimbă valorile, asigurând că r1<=r2 și păstrând și corespondență cu c1 și c2.
+
+`citire_date`
+-	Parametri: int *n, int *m, int *k(pointeri), int a[NMAX][NMAX] (matrice bidimensională), elicopter de tip helicopter (vector de structuri)
+-	Nu așteaptă să se returneze ceva, fiind tipul void
+-	Mod de funcționare: citește de la tastatură toate datele necesare pentru rularea programului
+
+`afisare_rezultate`
+-	Parametri: int X(numărul elicopterelor care nu afectează niciun teren), int nr(numărul elicopterelor care afectează majoritar teren liber), int rez[] (vectorul cu elicopterele care afectează terenul)
+-	Nu așteaptă să se returneze ceva, fiind tipul void
+-	Mod de funcționare: afișează rezultatele în ordinea cerută
